@@ -11,6 +11,13 @@ function Point(x, y) {
 	this.y = y;
 }
 
+const point_radius = 6;
+
+Point.prototype.hover = function (cx, cy) {
+	return ((cx > this.x - point_radius) && (cx < this.x + point_radius)
+		&& (cy > this.y - point_radius) && (cy < this.y + point_radius));
+}
+
 const src = new Point(120, 120);
 const dst = new Point(200, 200);
 
@@ -19,11 +26,70 @@ const row = 18;
 const col = 10;
 const grid_size = 32;
 
+/* others */
+let dragging_point = null;
+let needToDraw = true;
+
 function init() {
+	c.addEventListener("mousedown", mouseDownListener, false);
 }
 
-function runPhysics() {
+function getMousePos(canvas, evt) {
+	var rect = canvas.getBoundingClientRect();
+	return {
+		x: (evt.clientX - rect.left) * (c.width / rect.width) - blank,
+		y: (evt.clientY - rect.top) * (c.height / rect.height) - blank
+	};
+}
 
+function mouseDownListener(evt) {
+	const mouse_pos = getMousePos(c, evt);
+	if (src.hover(mouse_pos.x, mouse_pos.y)) {
+		dragging_point = src;
+	}
+	else if (dst.hover(mouse_pos.x, mouse_pos.y)) {
+		dragging_point = dst;
+	}
+	else {
+		dragging_point = null;
+	}
+
+	if (dragging_point) {
+		window.addEventListener("mousemove", mouseMoveListener, false);
+		window.addEventListener("mouseup", mouseUpListener, false);
+	}
+}
+
+function mouseMoveListener(evt) {
+	if (!dragging_point) return;
+
+	const mouse_pos = getMousePos(c, evt);
+	dragging_point.x = mouse_pos.x;
+	dragging_point.y = mouse_pos.y;
+
+	if ( dragging_point.x < 0 ) dragging_point.x = 0;
+	if ( dragging_point.y < 0 ) dragging_point.y = 0;
+	if ( dragging_point.x > (col - 1)  * grid_size ) dragging_point.x = (col - 1) * grid_size;
+	if ( dragging_point.y > (row - 1)  * grid_size ) dragging_point.y = (row - 1) * grid_size;
+
+	doSomething();
+	needToDraw = true;
+}
+
+function mouseUpListener(evt) {
+	window.removeEventListener("mousemove", mouseMoveListener, false);
+	window.removeEventListener("mouseup", mouseUpListener, false);
+	dragging_point = null;
+}
+
+function doSomething() {
+
+}
+
+function drawBackground()
+{
+	ctx.fillStyle="#fff";
+	ctx.fillRect(0, 0, width, height);
 }
 
 function drawGrid() {
@@ -47,28 +113,32 @@ function drawPoint() {
 	ctx.strokeStyle = "#333300";
 	ctx.fillStyle = "#333300";
 
-	const radius = 6;
-
 	ctx.beginPath();
 	ctx.moveTo(blank + src.x, blank + src.y);
 	ctx.lineTo(blank + dst.x, blank + dst.y);
 	ctx.stroke();
 
 	ctx.beginPath();
-	ctx.arc(blank + src.x, blank + src.y, radius, 0, 2 * Math.PI);
+	ctx.arc(blank + src.x, blank + src.y, point_radius, 0, 2 * Math.PI);
 	ctx.fill();
 	ctx.stroke();
 
 	ctx.beginPath();
-	ctx.arc(blank + dst.x, blank + dst.y, radius, 0, 2 * Math.PI);
+	ctx.arc(blank + dst.x, blank + dst.y, point_radius, 0, 2 * Math.PI);
 	ctx.fill();
 	ctx.stroke();
 }
 
 // Canvas Loop
 function updateBoard() {
-	drawGrid();
-	drawPoint();
+	if (needToDraw)
+	{
+		drawBackground();
+		drawGrid();
+		drawPoint();
+
+		needToDraw = false;
+	}
 
 	setTimeout(updateBoard, 20);
 }
