@@ -36,6 +36,11 @@ function clearGrid() {
 	}
 }
 
+function isValidGrid(r, c) {
+	if (r < 0 || r >= row || c < 0 || c >= col) return false;
+	return true;
+}
+
 /* others */
 let dragging_point = null;
 let needToDraw = true;
@@ -87,8 +92,8 @@ function mouseMoveListener(evt) {
 
 	if (dragging_point.x < 0) dragging_point.x = 0;
 	if (dragging_point.y < 0) dragging_point.y = 0;
-	if (dragging_point.x > (col - 1) * grid_size) dragging_point.x = (col - 1) * grid_size;
-	if (dragging_point.y > (row - 1) * grid_size) dragging_point.y = (row - 1) * grid_size;
+	if (dragging_point.x > col * grid_size) dragging_point.x = col * grid_size;
+	if (dragging_point.y > row * grid_size) dragging_point.y = row * grid_size;
 
 	ProcessBresenham();
 	needToDraw = true;
@@ -143,7 +148,11 @@ function ProcessBresenham() {
 	let manhattanDistance = Math.abs(Math.floor(grid_dst_x) - Math.floor(grid_src_x)) +
 		Math.abs(Math.floor(grid_dst_y) - Math.floor(grid_src_y));
 	for (let t = 0; t <= manhattanDistance; ++t) {
-		grid_2d[y][x] = 1;
+
+		if (isValidGrid(y, x)) {
+			grid_2d[y][x] = 1;
+		}
+
 		//Only move in either X or Y coordinates, not both.
 		if (Math.abs(tMaxX) < Math.abs(tMaxY)) {
 			tMaxX += tDeltaX;
@@ -164,8 +173,7 @@ function drawGrid() {
 	ctx.fillStyle = "#6975A6";
 	for (let r = 0; r < row; r++) {
 		for (let c = 0; c < col; c++) {
-			if (grid_2d[r][c] == 1)
-			{
+			if (grid_2d[r][c] == 1) {
 				ctx.fillRect(blank + c * grid_size, blank + r * grid_size, grid_size, grid_size);
 			}
 		}
@@ -173,16 +181,16 @@ function drawGrid() {
 
 	ctx.strokeStyle = "#333300";
 	ctx.fillStyle = "#333300";
-	for (let c = 0; c < col; c++) {
+	for (let c = 0; c <= col; c++) {
 		ctx.beginPath();
 		ctx.moveTo(blank + c * grid_size, blank);
-		ctx.lineTo(blank + c * grid_size, blank + (row - 1) * grid_size);
+		ctx.lineTo(blank + c * grid_size, blank + row * grid_size);
 		ctx.stroke();
 	}
-	for (let r = 0; r < row; r++) {
+	for (let r = 0; r <= row; r++) {
 		ctx.beginPath();
 		ctx.moveTo(blank, blank + r * grid_size);
-		ctx.lineTo(blank + (col - 1) * grid_size, blank + r * grid_size);
+		ctx.lineTo(blank + col * grid_size, blank + r * grid_size);
 		ctx.stroke();
 	}
 }
